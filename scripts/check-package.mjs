@@ -129,7 +129,6 @@ async function run() {
 			"--prefix",
 			consumerRoot,
 			"install",
-			"--offline",
 			"--legacy-peer-deps",
 			"--ignore-scripts",
 			"--no-package-lock",
