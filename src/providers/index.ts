@@ -1,68 +1,20 @@
-// Provider registry — pluggable factory + metadata + dynamic helpers
-//
-// Adding a provider:
-//   1. Create providers/<name>.ts implementing Provider + exporting META
-//   2. Add it to this directory; routing, search, fetch, and config pick it up automatically
+// Provider registry — built-in adapters register statically at module load;
+// user adapters are discovered later from
+// <agent dir>/extensions/pi-search/providers/ by src/adapter-loader.ts and may
+// override built-ins by name. Built-in provider files (src/providers/*.ts)
+// are reference templates for custom adapters.
 
-import { existsSync, readdirSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { getProviderFactory, getProviderRegistry, registerProvider } from "../adapter-api.js";
+import anysearchAdapter from "./anysearch.js";
+import jinaAdapter from "./jina.js";
+import tavilyAdapter from "./tavily.js";
 import type { Provider, ProviderMeta } from "./types.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+registerProvider(anysearchAdapter, "builtin");
+registerProvider(jinaAdapter, "builtin");
+registerProvider(tavilyAdapter, "builtin");
 
-const PROVIDERS_MUTABLE: ProviderMeta[] = [];
-type ProviderConstructor = new (apiKey: any) => Provider;
-const PROVIDER_CLASSES = new Map<string, ProviderConstructor>();
-
-async function loadProvidersFromDir(dirPath: string, relativeImportPrefix?: string) {
-	if (!existsSync(dirPath)) return;
-	const files = readdirSync(dirPath);
-	for (const file of files) {
-		if (
-			(file.endsWith(".ts") || file.endsWith(".js")) &&
-			!file.endsWith(".test.ts") &&
-			!file.endsWith(".test.js") &&
-			!file.endsWith(".spec.ts") &&
-			!file.endsWith(".spec.js") &&
-			!file.endsWith(".d.ts") &&
-			!file.startsWith("index.") &&
-			!file.startsWith("types.")
-		) {
-			try {
-				const nameWithoutExt = file.slice(0, -3);
-				const mod = relativeImportPrefix
-					? await import(`${relativeImportPrefix}${nameWithoutExt}.js`)
-					: await import(pathToFileURL(join(dirPath, `${nameWithoutExt}.js`)).href);
-
-				let meta: ProviderMeta | undefined;
-				let providerClass: ProviderConstructor | undefined;
-
-				for (const [key, value] of Object.entries(mod)) {
-					if (value && typeof value === "object" && "name" in value && "capabilities" in value) {
-						meta = value as ProviderMeta;
-					}
-					if (typeof value === "function" && key.endsWith("Provider")) {
-						providerClass = value as ProviderConstructor;
-					}
-				}
-
-				if (meta && providerClass) {
-					PROVIDERS_MUTABLE.push(meta);
-					PROVIDER_CLASSES.set(meta.name, providerClass);
-				}
-			} catch (err) {
-				console.error(`Failed to load provider module from ${file}:`, err instanceof Error ? err.message : err);
-			}
-		}
-	}
-}
-
-// Scan provider directory
-await loadProvidersFromDir(__dirname, "./");
-
-export const PROVIDERS: readonly ProviderMeta[] = PROVIDERS_MUTABLE;
+export const PROVIDERS: readonly ProviderMeta[] = getProviderRegistry();
 
 export function searchProviderNames(): string[] {
 	return PROVIDERS.filter((p) => p.capabilities.generalSearch).map((p) => p.name);
@@ -137,7 +89,7 @@ export function fetchPromptGuidelines(): string[] {
 	lines.push(
 		"If unsure which provider fits, omit provider in web_fetch — it uses a cost-priority fallback chain (fast/free first, heavy JS-rendering last).",
 		'After reading content with web_fetch, include a "Sources:" section with markdown hyperlinks to the fetched URLs.',
-		"Large web_fetch results are truncated — the full content path is reported in the result, so use the read tool to access it.",
+		"Large web_fetch results are truncated — the full-output path is reported in the result, so use the read tool to access it.",
 	);
 
 	return lines;
@@ -148,23 +100,22 @@ export interface ProviderOptions {
 }
 
 export function createProvider(name: string, opts: ProviderOptions): Provider {
-	const { apiKey } = opts;
 	const meta = PROVIDERS.find((p) => p.name === name);
 	if (!meta) {
 		throw new Error(`Unknown provider: "${name}". Available: ${PROVIDERS.map((p) => p.name).join(", ")}`);
 	}
 
 	const keyRequired = meta.apiKeyRequired ?? true;
-	if (keyRequired && !apiKey) {
+	if (keyRequired && !opts.apiKey) {
 		throw new Error(`${meta.label} requires an API key`);
 	}
 
-	const ProviderClass = PROVIDER_CLASSES.get(name);
-	if (!ProviderClass) {
-		throw new Error(`Implementation class for provider "${name}" not found`);
+	const factory = getProviderFactory(name);
+	if (!factory) {
+		throw new Error(`Implementation factory for provider "${name}" not found`);
 	}
 
-	return new ProviderClass(apiKey);
+	return factory(opts);
 }
 
 export function createAvailableProviders(apiKeys: Record<string, string | undefined>): Map<string, Provider> {

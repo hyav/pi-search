@@ -1,5 +1,6 @@
+import { defineProvider } from "../adapter-api.js";
 import { fetchWithTimeout } from "../utils.js";
-import type { CrawlResult, FetchResponse, Provider, ProviderMeta, SearchResponse, SearchResult } from "./types.js";
+import type { CrawlResult, FetchResponse, Provider, SearchResponse, SearchResult } from "./types.js";
 
 // Tavily REST API client
 //
@@ -68,11 +69,10 @@ function normalizeResults(raw: TavilyRawResult[]): SearchResult[] {
 	}));
 }
 
-export const TAVILY_META = {
-	name: "tavily",
-	label: "Tavily",
-	envVar: "TAVILY_API_KEY",
-	capabilities: {
+export class TavilyProvider implements Provider {
+	readonly name = "tavily";
+	readonly label = "Tavily";
+	readonly capabilities = {
 		generalSearch: true,
 		verticalSearch: false,
 		contentExtraction: true,
@@ -81,20 +81,7 @@ export const TAVILY_META = {
 		deepResearch: true,
 		batchSearch: false,
 		hasMetadata: false,
-	},
-	searchHint:
-		"Optimized for general-purpose AI agent retrieval. Focuses on tech documentation, programming Q&A, and general facts by raw text block extraction and noise filtering.",
-	fetchHint:
-		"General-purpose markdown web extractor. Strips web noise (headers/footers/ads) with balanced retrieval speed and output structure.",
-	searchFallbackPriority: 10,
-	fetchFallbackPriority: 10,
-	apiKeyRequired: false,
-} as const satisfies ProviderMeta;
-
-export class TavilyProvider implements Provider {
-	readonly name = TAVILY_META.name;
-	readonly label = TAVILY_META.label;
-	readonly capabilities = TAVILY_META.capabilities;
+	};
 
 	constructor(private readonly apiKey: string | undefined) {}
 
@@ -183,3 +170,27 @@ export class TavilyProvider implements Provider {
 		return data.answer ?? "";
 	}
 }
+
+export default defineProvider({
+	name: "tavily",
+	label: "Tavily",
+	envVar: "TAVILY_API_KEY",
+	capabilities: {
+		generalSearch: true,
+		verticalSearch: false,
+		contentExtraction: true,
+		crawl: true,
+		siteMap: true,
+		deepResearch: true,
+		batchSearch: false,
+		hasMetadata: false,
+	},
+	searchHint:
+		"Optimized for general-purpose AI agent retrieval. Focuses on tech documentation, programming Q&A, and general facts by raw text block extraction and noise filtering.",
+	fetchHint:
+		"General-purpose markdown web extractor. Strips web noise (headers/footers/ads) with balanced retrieval speed and output structure.",
+	searchFallbackPriority: 10,
+	fetchFallbackPriority: 10,
+	apiKeyRequired: false,
+	create: ({ apiKey }) => new TavilyProvider(apiKey),
+});

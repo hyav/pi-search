@@ -4,10 +4,10 @@
 // Each query independently goes through: LLM-specified provider or dynamic
 // fallback chain → optional vertical search → optional deep research.
 
-import { StringEnum } from "@earendil-works/pi-ai";
 import { DEFAULT_MAX_BYTES, DEFAULT_MAX_LINES, type ExtensionAPI, formatSize } from "@earendil-works/pi-coding-agent";
 import { Text } from "@earendil-works/pi-tui";
 import { type Static, Type } from "typebox";
+import { StringEnum } from "./adapter-api.js";
 import { loadConfig, resolveApiKey } from "./config.js";
 import { limitSearchOutput } from "./output.js";
 import {
@@ -147,7 +147,7 @@ export async function executeSearch(
 
 	if (chain.length === 0) {
 		throw new Error(
-			"No search providers available. Please configure API keys or add provider adapters to src/providers/.",
+			"No search providers available. Please configure API keys or add custom provider adapters to <agent-dir>/extensions/pi-search/providers/.",
 		);
 	}
 

@@ -1,34 +1,12 @@
+import { defineProvider } from "../adapter-api.js";
 import { fetchWithTimeout } from "../utils.js";
-import type { FetchResponse, Provider, ProviderMeta } from "./types.js";
+import type { FetchResponse, Provider } from "./types.js";
 
 // Jina AI provider — reader only (search endpoint deliberately not exposed,
 // see ADR-0003)
 //
 // r.jina.ai returns SSE (Server-Sent Events) format by default.
 // We parse the first data event to extract clean markdown content.
-
-export const JINA_META = {
-	name: "jina",
-	label: "Jina",
-	envVar: "JINA_API_KEY",
-	capabilities: {
-		generalSearch: false,
-		verticalSearch: false,
-		contentExtraction: true,
-		crawl: false,
-		siteMap: false,
-		deepResearch: false,
-		batchSearch: false,
-		hasMetadata: false,
-	},
-	// No searchHint — deliberately excluded from search routing
-	fetchHint:
-		"Fast, lightweight reader that converts web pages and PDF files into LLM-friendly Markdown. Features native PDF parsing and low latency, best for static articles and documents.",
-	// No verticals
-	// No searchFallbackPriority — excluded from search chain
-	fetchFallbackPriority: 15,
-	apiKeyRequired: false,
-} as const satisfies ProviderMeta;
 
 interface JinaSSEData {
 	title?: string;
@@ -61,9 +39,18 @@ function parseSSE(text: string): JinaSSEData | null {
 }
 
 export class JinaProvider implements Provider {
-	readonly name = JINA_META.name;
-	readonly label = JINA_META.label;
-	readonly capabilities = JINA_META.capabilities;
+	readonly name = "jina";
+	readonly label = "Jina";
+	readonly capabilities = {
+		generalSearch: false,
+		verticalSearch: false,
+		contentExtraction: true,
+		crawl: false,
+		siteMap: false,
+		deepResearch: false,
+		batchSearch: false,
+		hasMetadata: false,
+	};
 
 	constructor(private readonly apiKey: string | undefined) {}
 
@@ -91,3 +78,27 @@ export class JinaProvider implements Provider {
 		return { text: raw, contentType: "text/markdown" };
 	}
 }
+
+export default defineProvider({
+	name: "jina",
+	label: "Jina",
+	envVar: "JINA_API_KEY",
+	capabilities: {
+		generalSearch: false,
+		verticalSearch: false,
+		contentExtraction: true,
+		crawl: false,
+		siteMap: false,
+		deepResearch: false,
+		batchSearch: false,
+		hasMetadata: false,
+	},
+	// No searchHint — deliberately excluded from search routing
+	fetchHint:
+		"Fast, lightweight reader that converts web pages and PDF files into LLM-friendly Markdown. Features native PDF parsing and low latency, best for static articles and documents.",
+	// No verticals
+	// No searchFallbackPriority — excluded from search chain
+	fetchFallbackPriority: 15,
+	apiKeyRequired: false,
+	create: ({ apiKey }) => new JinaProvider(apiKey),
+});

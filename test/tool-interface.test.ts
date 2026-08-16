@@ -3,9 +3,9 @@ import { describe, it, mock } from "node:test";
 import { DEFAULT_MAX_BYTES, DEFAULT_MAX_LINES, formatSize } from "@earendil-works/pi-coding-agent";
 import registerSearchKit from "../src/index.js";
 
-function registeredTools() {
+async function registeredTools() {
 	const tools = new Map<string, any>();
-	registerSearchKit({
+	await registerSearchKit({
 		registerTool(tool: any) {
 			tools.set(tool.name, tool);
 		},
@@ -15,8 +15,8 @@ function registeredTools() {
 }
 
 describe("web_search public interface", () => {
-	it("exposes vertical search and bounds parallel queries", () => {
-		const tool = registeredTools().get("web_search");
+	it("exposes vertical search and bounds parallel queries", async () => {
+		const tool = (await registeredTools()).get("web_search");
 		assert.ok(tool);
 		const properties = tool.parameters.properties;
 		assert.ok(properties.vertical, "vertical must be callable through the registered tool schema");
@@ -29,14 +29,14 @@ describe("web_search public interface", () => {
 		assert.strictEqual(properties.queries.anyOf?.[0]?.maxItems ?? properties.queries.maxItems, 4);
 	});
 
-	it("normalizes legacy fractional result counts before integer-schema validation", () => {
-		const search = registeredTools().get("web_search");
+	it("normalizes legacy fractional result counts before integer-schema validation", async () => {
+		const search = (await registeredTools()).get("web_search");
 		const prepared = search.prepareArguments({ query: "compatibility", max_results: 3.8 });
 		assert.strictEqual(prepared.max_results, 3);
 	});
 
-	it("uses an integer result-count schema and documents Pi output limits", () => {
-		const tools = registeredTools();
+	it("uses an integer result-count schema and documents Pi output limits", async () => {
+		const tools = await registeredTools();
 		const search = tools.get("web_search");
 		const fetch = tools.get("web_fetch");
 		const maxResultsSchema =
@@ -49,7 +49,7 @@ describe("web_search public interface", () => {
 	});
 
 	it("rejects ambiguous research and raw-provider combinations before network access", async () => {
-		const tools = registeredTools();
+		const tools = await registeredTools();
 		const search = tools.get("web_search");
 		const fetch = tools.get("web_fetch");
 		await assert.rejects(
@@ -75,7 +75,7 @@ describe("web_search public interface", () => {
 		});
 
 		try {
-			const search = registeredTools().get("web_search");
+			const search = (await registeredTools()).get("web_search");
 			await assert.rejects(
 				search.execute("id", { queries: ["first", "second"], provider: "tavily" }, controller.signal),
 				(error) => error === reason,
@@ -85,8 +85,8 @@ describe("web_search public interface", () => {
 		}
 	});
 
-	it("keeps top-level tool metadata provider-neutral", () => {
-		const tools = registeredTools();
+	it("keeps top-level tool metadata provider-neutral", async () => {
+		const tools = await registeredTools();
 		assert.ok(!tools.get("web_search").description.includes("Exa"));
 		assert.ok(!tools.get("web_search").promptSnippet.includes("provider='exa'"));
 		assert.ok(!tools.get("web_fetch").description.includes("Firecrawl"));
@@ -95,7 +95,7 @@ describe("web_search public interface", () => {
 	it("exports the package entrypoint", async () => {
 		const packageModule = await import("../index.ts");
 		const tools = new Map<string, any>();
-		packageModule.default({
+		await packageModule.default({
 			registerTool(tool: any) {
 				tools.set(tool.name, tool);
 			},

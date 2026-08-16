@@ -1,5 +1,4 @@
-// Configuration persistence — <Pi agent dir>/pi-search/config.json.
-// Legacy pi-search-kit and ~/.pi/pi-search paths remain read-only fallbacks.
+// Configuration persistence — <Pi agent dir>/extensions/pi-search/config.json.
 //
 // Env vars take precedence over config file values:
 //   TAVILY_API_KEY, ANYSEARCH_API_KEY, JINA_API_KEY
@@ -7,19 +6,31 @@
 import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { getAgentDir } from "@earendil-works/pi-coding-agent";
 
-const LEGACY_CONFIG_PATH = join(homedir(), ".pi", "pi-search-kit", "config.json");
-const LEGACY_CONFIG_PATH_NEW = join(homedir(), ".pi", "pi-search", "config.json");
+/**
+ * Resolve Pi's agent directory without importing Pi's bundled packages.
+ * Mirrors Pi's getAgentDir(): `PI_CODING_AGENT_DIR` wins, `~/` expands to the
+ * home directory, and the fallback is `~/.pi/agent`. Setups that place the Pi
+ * directory under XDG (for example `$XDG_CONFIG_HOME/pi/agent`) do so through
+ * this environment variable, so XDG layouts are honored automatically.
+ */
+export function resolveDefaultAgentDir(): string {
+	const configured = process.env.PI_CODING_AGENT_DIR;
+	const raw =
+		configured !== undefined && configured.trim() !== "" ? configured.trim() : join(homedir(), ".pi", "agent");
+	if (raw === "~") return homedir();
+	if (raw.startsWith("~/")) return join(homedir(), raw.slice(2));
+	return raw;
+}
+
+/** User-managed extension directory: <agent dir>/extensions/pi-search. */
+export function getUserConfigDir(): string {
+	return join(resolveDefaultAgentDir(), "extensions", "pi-search");
+}
 
 function resolveDefaultConfigPath(): string | undefined {
-	const piConfigPath = join(getAgentDir(), "pi-search", "config.json");
-	if (existsSync(piConfigPath)) return piConfigPath;
-	const piConfigPathKit = join(getAgentDir(), "pi-search-kit", "config.json");
-	if (existsSync(piConfigPathKit)) return piConfigPathKit;
-	if (existsSync(LEGACY_CONFIG_PATH_NEW)) return LEGACY_CONFIG_PATH_NEW;
-	if (existsSync(LEGACY_CONFIG_PATH)) return LEGACY_CONFIG_PATH;
-	return undefined;
+	const configPath = join(getUserConfigDir(), "config.json");
+	return existsSync(configPath) ? configPath : undefined;
 }
 
 export interface SearchConfig {

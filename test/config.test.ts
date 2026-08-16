@@ -33,10 +33,10 @@ describe("API Key Resolution Logic (resolveApiKey)", () => {
 
 	it("should resolve extension config under Pi's agent directory", () => {
 		const dir = mkdtempSync(join(tmpdir(), "pi-search-agent-dir-"));
-		const extensionConfigDir = join(dir, "pi-search");
+		const extensionConfigDir = join(dir, "extensions", "pi-search");
 		const originalAgentDir = process.env.PI_CODING_AGENT_DIR;
 		try {
-			mkdirSync(extensionConfigDir);
+			mkdirSync(extensionConfigDir, { recursive: true });
 			writeFileSync(
 				join(extensionConfigDir, "config.json"),
 				JSON.stringify({ apiKeys: { tavily: "agent-dir-tavily-key" } }),
@@ -45,6 +45,28 @@ describe("API Key Resolution Logic (resolveApiKey)", () => {
 
 			const config = loadConfig();
 			assert.strictEqual(config.apiKeys?.tavily, "agent-dir-tavily-key");
+		} finally {
+			if (originalAgentDir === undefined) {
+				delete process.env.PI_CODING_AGENT_DIR;
+			} else {
+				process.env.PI_CODING_AGENT_DIR = originalAgentDir;
+			}
+			rmSync(dir, { recursive: true, force: true });
+		}
+	});
+
+	it("should ignore legacy config paths outside extensions/pi-search", () => {
+		const dir = mkdtempSync(join(tmpdir(), "pi-search-legacy-"));
+		const originalAgentDir = process.env.PI_CODING_AGENT_DIR;
+		try {
+			for (const legacy of [join(dir, "pi-search"), join(dir, "pi-search-kit")]) {
+				mkdirSync(legacy);
+				writeFileSync(join(legacy, "config.json"), JSON.stringify({ apiKeys: { tavily: "legacy-key" } }));
+			}
+			process.env.PI_CODING_AGENT_DIR = dir;
+
+			const config = loadConfig();
+			assert.strictEqual(config.apiKeys?.tavily, undefined, "legacy config paths must not be read");
 		} finally {
 			if (originalAgentDir === undefined) {
 				delete process.env.PI_CODING_AGENT_DIR;

@@ -1,5 +1,6 @@
+import { defineProvider } from "../adapter-api.js";
 import { fetchWithTimeout } from "../utils.js";
-import type { FetchResponse, Provider, ProviderMeta, SearchResponse, SearchResult } from "./types.js";
+import type { FetchResponse, Provider, SearchResponse, SearchResult } from "./types.js";
 
 // Anysearch REST API client
 //
@@ -79,11 +80,10 @@ async function doSearch(
 	return envelope.data;
 }
 
-export const ANYSEARCH_META = {
-	name: "anysearch",
-	label: "AnySearch",
-	envVar: "ANYSEARCH_API_KEY",
-	capabilities: {
+export class AnysearchProvider implements Provider {
+	readonly name = "anysearch";
+	readonly label = "AnySearch";
+	readonly capabilities = {
 		generalSearch: true,
 		verticalSearch: true,
 		contentExtraction: true,
@@ -92,21 +92,7 @@ export const ANYSEARCH_META = {
 		deepResearch: false,
 		batchSearch: true,
 		hasMetadata: true,
-	},
-	searchHint:
-		"Provides structured vertical search (like US stocks, academic archives, security vulnerabilities, or travel metadata) tailored for niche domains when a specific 'vertical' is specified.",
-	fetchHint:
-		"Extracts structured metadata (e.g. pub dates, authors, specifications) along with the core content from domain-specific vertical pages.",
-	verticals: ["finance.us_stock", "academic.search", "security.scan", "travel"] as const,
-	searchFallbackPriority: 30,
-	fetchFallbackPriority: 25,
-	apiKeyRequired: false,
-} as const satisfies ProviderMeta;
-
-export class AnysearchProvider implements Provider {
-	readonly name = ANYSEARCH_META.name;
-	readonly label = ANYSEARCH_META.label;
-	readonly capabilities = ANYSEARCH_META.capabilities;
+	};
 
 	constructor(private readonly apiKey: string | undefined) {}
 
@@ -181,3 +167,28 @@ export class AnysearchProvider implements Provider {
 		};
 	}
 }
+
+export default defineProvider({
+	name: "anysearch",
+	label: "AnySearch",
+	envVar: "ANYSEARCH_API_KEY",
+	capabilities: {
+		generalSearch: true,
+		verticalSearch: true,
+		contentExtraction: true,
+		crawl: false,
+		siteMap: false,
+		deepResearch: false,
+		batchSearch: true,
+		hasMetadata: true,
+	},
+	searchHint:
+		"Provides structured vertical search (like US stocks, academic archives, security vulnerabilities, or travel metadata) tailored for niche domains when a specific 'vertical' is specified.",
+	fetchHint:
+		"Extracts structured metadata (e.g. pub dates, authors, specifications) along with the core content from domain-specific vertical pages.",
+	verticals: ["finance.us_stock", "academic.search", "security.scan", "travel"],
+	searchFallbackPriority: 30,
+	fetchFallbackPriority: 25,
+	apiKeyRequired: false,
+	create: ({ apiKey }) => new AnysearchProvider(apiKey),
+});

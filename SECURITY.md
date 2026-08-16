@@ -1,6 +1,6 @@
 # Security Policy
 
-`@hyav/pi-search` is a Pi extension. Its TypeScript source runs with the user's system privileges, sends queries and URLs to configured Provider services, reads API keys from environment variables or local configuration, and writes oversized results to temporary files. Review the source and package artifact before installing extensions from untrusted sources.
+`@hyav/pi-search` is a Pi extension. Its TypeScript source runs with the user's system privileges, sends queries and URLs to configured Provider services, reads API keys from environment variables or local configuration, and writes oversized results to temporary files. Custom provider adapters under `<agent-dir>/extensions/pi-search/providers/` are user-supplied code that runs with the same privileges as the extension itself. Review the source and package artifact before installing extensions or adapters from untrusted sources.
 
 ## Supported versions
 
@@ -30,7 +30,7 @@ Reports are handled on a best-effort basis; no acknowledgement, remediation, or 
 
 ## Scope
 
-This policy covers the source repository, the published `@hyav/pi-search` npm artifact, Provider routing, configuration and credential handling, globally routable direct-fetch enforcement, DNS/IP locking, request deadlines and cancellation, response-size limits, and temporary output handling. Vulnerabilities in Pi, a Provider service, npm, GitHub, or another dependency should also be reported to the relevant upstream maintainer.
+This policy covers the source repository, the published `@hyav/pi-search` npm artifact, Provider routing, configuration and credential handling, user-supplied adapter code under `<agent-dir>/extensions/pi-search/providers/`, globally routable direct-fetch enforcement, DNS/IP locking, request deadlines and cancellation, response-size limits, and temporary output handling. Vulnerabilities in Pi, a Provider service, npm, GitHub, or another dependency should also be reported to the relevant upstream maintainer.
 
 For ordinary defects and usage questions, use the [public issue tracker](https://github.com/hyav/pi-search/issues).
 

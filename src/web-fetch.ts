@@ -6,7 +6,6 @@
 import { mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { StringEnum } from "@earendil-works/pi-ai";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import {
 	DEFAULT_MAX_BYTES,
@@ -18,6 +17,7 @@ import {
 } from "@earendil-works/pi-coding-agent";
 import { Text } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
+import { StringEnum } from "./adapter-api.js";
 import { loadConfig, resolveApiKey } from "./config.js";
 import {
 	buildFetchChain,
@@ -74,7 +74,7 @@ export async function executeFetch(
 
 	if (chain.length === 0) {
 		throw new Error(
-			"No content extraction providers available. Please configure API keys or add provider adapters to src/providers/.",
+			"No content extraction providers available. Please configure API keys or add custom provider adapters to <agent-dir>/extensions/pi-search/providers/.",
 		);
 	}
 

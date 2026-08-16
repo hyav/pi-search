@@ -17,12 +17,7 @@ const nestedNpmEnvironment = Object.fromEntries(
 );
 nestedNpmEnvironment.npm_config_dry_run = "false";
 
-const requiredPiPeers = [
-	"@earendil-works/pi-ai",
-	"@earendil-works/pi-coding-agent",
-	"@earendil-works/pi-tui",
-	"typebox",
-];
+const requiredPiPeers = ["@earendil-works/pi-coding-agent", "@earendil-works/pi-tui", "typebox"];
 
 const requiredFiles = [
 	"package.json",
