@@ -2,6 +2,11 @@
 
 This file is the authoritative user-facing release history for `@hyav/pi-search`.
 
+## 0.1.1 - 2026-08-16
+
+- Enforced upfront provider capability and method verification in fallback routing chains.
+- Improved error messaging when requested search or content extraction capabilities are unavailable.
+
 ## 0.1.0 - 2026-08-16
 
 - Initial public release of `@hyav/pi-search`.
