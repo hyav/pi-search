@@ -1,8 +1,8 @@
-// Configuration persistence — <Pi agent dir>/pi-search-kit/config.json
+// Configuration persistence — <Pi agent dir>/pi-search/config.json.
+// Legacy pi-search-kit and ~/.pi/pi-search paths remain read-only fallbacks.
 //
 // Env vars take precedence over config file values:
-//   TAVILY_API_KEY, ANYSEARCH_API_KEY, JINA_API_KEY, EXA_API_KEY, SERPER_API_KEY,
-//   FIRECRAWL_API_KEY, DEEPSEEK_API_KEY, GEMINI_API_KEY, IFLOW_API_KEY
+//   TAVILY_API_KEY, ANYSEARCH_API_KEY, JINA_API_KEY
 
 import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";

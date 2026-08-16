@@ -1,4 +1,4 @@
-// pi-search-kit — unified web search extension for Pi
+// @hyav/pi-search — unified web search extension for Pi
 //
 // Registers:
 //   web_search  — search with LLM-driven provider routing
